@@ -29,9 +29,8 @@ python Deep_Learning.py
 
 
 View training progress:
-```bash
 tensorboard --logdir=logs_[timestamp]/
-
+```
 ## Results
 
 https://sample_comparison.png
