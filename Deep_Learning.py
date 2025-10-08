@@ -19,16 +19,14 @@ import io
 import cv2
 from sklearn.metrics import jaccard_score
 
-# ==================== CONFIG ====================
+#1. CONFIG
 class Config:
     BASE_DIR = r"K:\UNI\MAHBOD\OpenEarthMap\OpenEarthMap_wo_xBD"
     IMG_SIZE = 256
     NUM_CLASSES = 5
     BATCH_SIZE = 8
     LR = 1e-4
-    EPOCHS = 50
-    
-    # Checkpoint settings
+    EPOCHS = 50    
     CKPT_FREQ = 2
     KEEP_CKPT = 3
     
@@ -43,7 +41,7 @@ class Config:
     Path(LOG_DIR).mkdir(exist_ok=True)
     Path(VIZ_DIR).mkdir(exist_ok=True)
 
-# ==================== DATASET ====================
+#2. DATASET
 class DamageDataset(Dataset):
     def __init__(self, file_list_path, transform=None, max_samples=500):
         with open(file_list_path, 'r') as f:
@@ -94,7 +92,7 @@ class DamageDataset(Dataset):
             dummy_mask = torch.zeros(Config.IMG_SIZE, Config.IMG_SIZE, dtype=torch.long)
             return dummy_img, dummy_mask, 'error'
 
-# ==================== MODEL ====================
+#3. MODEL
 class UNET(nn.Module):
     def __init__(self, in_channels=3, out_channels=Config.NUM_CLASSES, features=[64, 128, 256, 512]):
         super().__init__()
@@ -150,7 +148,7 @@ class UNET(nn.Module):
 
         return self.final_conv(x)
 
-# ==================== VISUALIZER ====================
+#4. VISUALIZER
 class Visualizer:
     COLORS = np.array([
         [0, 0, 0],       # Class 0
@@ -237,7 +235,7 @@ class Visualizer:
         plt.close(fig)
         return path
 
-# ==================== TRAINER ====================
+#5. TRAINER
 class Trainer:
     def __init__(self):
         self.device = Config.DEVICE
@@ -284,15 +282,13 @@ class Trainer:
 
     def _setup_logs(self):
         self.log_file = os.path.join(Config.VIZ_DIR, "progress.md")
-        # ✅ FIX: Use UTF-8 encoding
         with open(self.log_file, 'w', encoding='utf-8') as f:
             f.write("# Training Progress\n\n")
             f.write("| Epoch | Loss | IoU | Best |\n")
             f.write("|-------|------|-----|------|\n")
 
     def _update_log(self, epoch, loss, iou):
-        # ✅ FIX: Use UTF-8 encoding and simple indicator
-        best = "*" if iou > self.best_iou else ""  # Use simple asterisk instead of star symbol
+        best = "*" if iou > self.best_iou else ""  
         with open(self.log_file, 'a', encoding='utf-8') as f:
             f.write(f"| {epoch} | {loss:.4f} | {iou:.4f} | {best} |\n")
 
@@ -393,7 +389,7 @@ class Trainer:
                 all_preds.append(preds.cpu())
                 all_masks.append(masks.cpu())
                 
-                if i == 0:  # First batch for visualization
+                if i == 0:
                     n = min(3, images.size(0))
                     samples = [
                         images[:n].cpu(),
@@ -402,21 +398,17 @@ class Trainer:
                         names[:n]
                     ]
         
-        # Calculate IoU
         all_preds = torch.cat(all_preds)
         all_masks = torch.cat(all_masks)
         iou = self.calc_iou(all_preds, all_masks)
         
-        # Visualization
         if samples:
             img, true, pred, names = samples
             fig = Visualizer.create_grid(img, true, pred, len(img))
             
-            # TensorBoard
             tb_img = Visualizer.fig_to_tensor(fig)
             self.writer.add_image('Validation/Grid', tb_img, self.epoch)
             
-            # Save file
             viz_path = Visualizer.save_fig(fig, self.epoch)
             print(f"Viz saved: {viz_path}")
         
@@ -443,32 +435,26 @@ class Trainer:
             for epoch in range(self.epoch, Config.EPOCHS + 1):
                 self.epoch = epoch
                 
-                # Train
                 loss = self.train_epoch()
                 self.train_loss.append(loss)
                 
-                # Validate
                 iou = self.validate()
                 self.val_iou.append(iou)
                 
                 print(f"Epoch {epoch}: Loss={loss:.4f}, IoU={iou:.4f}")
                 
-                # Logging
                 self._update_log(epoch, loss, iou)
                 self.writer.add_scalar('Loss/Train', loss, epoch)
                 self.writer.add_scalar('Metrics/IoU', iou, epoch)
                 
-                # Save best
                 if iou > self.best_iou:
                     self.best_iou = iou
                     self.save_ckpt('best_model', best=True)
                 
-                # Periodic checkpoint
                 if epoch % Config.CKPT_FREQ == 0:
                     self.save_ckpt(f'epoch_{epoch:03d}')
                     self.check_overfit()
                 
-                # Save state
                 self.save_state()
                 
         except Exception as e:
@@ -480,7 +466,7 @@ class Trainer:
             self.writer.close()
             print(f"Training complete! Best IoU: {self.best_iou:.4f}")
 
-# ==================== MAIN ====================
+#6. MAIN
 def main():
     trainer = Trainer()
     trainer.train()
