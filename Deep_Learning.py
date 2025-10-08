@@ -19,7 +19,7 @@ import io
 import cv2
 from sklearn.metrics import jaccard_score
 
-# 1. CONFIG
+# ==================== CONFIG ====================
 class Config:
     BASE_DIR = r"K:\UNI\MAHBOD\OpenEarthMap\OpenEarthMap_wo_xBD"
     IMG_SIZE = 256
@@ -43,7 +43,7 @@ class Config:
     Path(LOG_DIR).mkdir(exist_ok=True)
     Path(VIZ_DIR).mkdir(exist_ok=True)
 
-# 2. DATASET
+# ==================== DATASET ====================
 class DamageDataset(Dataset):
     def __init__(self, file_list_path, transform=None, max_samples=500):
         with open(file_list_path, 'r') as f:
@@ -94,7 +94,7 @@ class DamageDataset(Dataset):
             dummy_mask = torch.zeros(Config.IMG_SIZE, Config.IMG_SIZE, dtype=torch.long)
             return dummy_img, dummy_mask, 'error'
 
-# 3. MODEL
+# ==================== MODEL ====================
 class UNET(nn.Module):
     def __init__(self, in_channels=3, out_channels=Config.NUM_CLASSES, features=[64, 128, 256, 512]):
         super().__init__()
@@ -150,7 +150,7 @@ class UNET(nn.Module):
 
         return self.final_conv(x)
 
-# 4. VISUALIZER
+# ==================== VISUALIZER ====================
 class Visualizer:
     COLORS = np.array([
         [0, 0, 0],       # Class 0
@@ -237,7 +237,7 @@ class Visualizer:
         plt.close(fig)
         return path
 
-# 5. TRAINER
+# ==================== TRAINER ====================
 class Trainer:
     def __init__(self):
         self.device = Config.DEVICE
@@ -284,14 +284,16 @@ class Trainer:
 
     def _setup_logs(self):
         self.log_file = os.path.join(Config.VIZ_DIR, "progress.md")
-        with open(self.log_file, 'w') as f:
+        # ✅ FIX: Use UTF-8 encoding
+        with open(self.log_file, 'w', encoding='utf-8') as f:
             f.write("# Training Progress\n\n")
             f.write("| Epoch | Loss | IoU | Best |\n")
             f.write("|-------|------|-----|------|\n")
 
     def _update_log(self, epoch, loss, iou):
-        best = "★" if iou > self.best_iou else ""
-        with open(self.log_file, 'a') as f:
+        # ✅ FIX: Use UTF-8 encoding and simple indicator
+        best = "*" if iou > self.best_iou else ""  # Use simple asterisk instead of star symbol
+        with open(self.log_file, 'a', encoding='utf-8') as f:
             f.write(f"| {epoch} | {loss:.4f} | {iou:.4f} | {best} |\n")
 
     def _clean_ckpts(self):
@@ -391,7 +393,7 @@ class Trainer:
                 all_preds.append(preds.cpu())
                 all_masks.append(masks.cpu())
                 
-                if i == 0:
+                if i == 0:  # First batch for visualization
                     n = min(3, images.size(0))
                     samples = [
                         images[:n].cpu(),
@@ -400,17 +402,21 @@ class Trainer:
                         names[:n]
                     ]
         
+        # Calculate IoU
         all_preds = torch.cat(all_preds)
         all_masks = torch.cat(all_masks)
         iou = self.calc_iou(all_preds, all_masks)
         
+        # Visualization
         if samples:
             img, true, pred, names = samples
             fig = Visualizer.create_grid(img, true, pred, len(img))
             
+            # TensorBoard
             tb_img = Visualizer.fig_to_tensor(fig)
             self.writer.add_image('Validation/Grid', tb_img, self.epoch)
             
+            # Save file
             viz_path = Visualizer.save_fig(fig, self.epoch)
             print(f"Viz saved: {viz_path}")
         
@@ -474,7 +480,7 @@ class Trainer:
             self.writer.close()
             print(f"Training complete! Best IoU: {self.best_iou:.4f}")
 
-# 6. MAIN
+# ==================== MAIN ====================
 def main():
     trainer = Trainer()
     trainer.train()
