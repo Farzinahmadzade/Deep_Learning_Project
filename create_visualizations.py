@@ -1,10 +1,12 @@
-# create_visualizations.py
 import matplotlib.pyplot as plt
 import numpy as np
 
 def create_sample_comparison():
-    """Creating sample images to display on GitHub"""
+    """Create sample images to display on GitHub"""
     fig, axes = plt.subplots(3, 4, figsize=(16, 12))
+    
+    colors = ['black', 'blue', 'yellow', 'green', 'red']
+    cmap = plt.cm.colors.ListedColormap(colors)
     
     for i in range(3):
         # Input Image
@@ -13,21 +15,20 @@ def create_sample_comparison():
         axes[i, 0].axis('off')
         
         # Ground Truth
-        axes[i, 1].imshow(np.random.randint(0, 5, (256, 256)), cmap='tab10', vmin=0, vmax=4)
+        true_mask = np.random.randint(0, 5, (256, 256))
+        axes[i, 1].imshow(true_mask, cmap=cmap, vmin=0, vmax=4)
         axes[i, 1].set_title('Ground Truth', fontweight='bold', color='green')
         axes[i, 1].axis('off')
         
         # Prediction
-        axes[i, 2].imshow(np.random.randint(0, 5, (256, 256)), cmap='tab10', vmin=0, vmax=4)
+        pred_mask = np.random.randint(0, 5, (256, 256))
+        axes[i, 2].imshow(pred_mask, cmap=cmap, vmin=0, vmax=4)
         axes[i, 2].set_title('Prediction', fontweight='bold', color='blue')
         axes[i, 2].axis('off')
         
-        # Comparison
-        comp = np.hstack([
-            np.random.randint(0, 5, (256, 256)), 
-            np.random.randint(0, 5, (256, 256))
-        ])
-        axes[i, 3].imshow(comp, cmap='tab10', vmin=0, vmax=4)
+        # Comparison 
+        comp = np.hstack([true_mask, pred_mask])
+        axes[i, 3].imshow(comp, cmap=cmap, vmin=0, vmax=4)
         axes[i, 3].set_title('Comparison\n(Left: Truth, Right: Pred)', fontweight='bold', color='red')
         axes[i, 3].axis('off')
 
@@ -38,9 +39,10 @@ def create_sample_comparison():
     print("✅ sample_comparison.png created!")
 
 def create_training_curves():
-    """Creating tutorial graphs to display on GitHub"""
+    """Create tutorial charts to display on GitHub"""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     
+    # نمودار Loss
     epochs = list(range(1, 51))
     train_loss = [1.4 * np.exp(-0.05 * i) + 0.7 for i in range(50)]
     val_loss = [1.3 * np.exp(-0.04 * i) + 0.75 for i in range(50)]
