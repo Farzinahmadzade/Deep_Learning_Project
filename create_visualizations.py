@@ -6,21 +6,17 @@ from shutil import copyfile
 def create_sample_comparison():
     """Use real validation images or create realistic samples"""
     
-    # Find the latest visualization directory
     viz_dirs = [d for d in os.listdir('.') if d.startswith('viz_') and os.path.isdir(d)]
     if viz_dirs:
         latest_viz = sorted(viz_dirs)[-1]
         val_files = [f for f in os.listdir(latest_viz) if f.startswith('val_epoch_') and f.endswith('.png')]
         
         if val_files:
-            # Use the latest validation image
             latest_val = sorted(val_files)[-1]
             val_path = os.path.join(latest_viz, latest_val)
             copyfile(val_path, 'sample_comparison.png')
             print(f"Using real validation image: {latest_val}")
             return
-    
-    # Create realistic sample images if no validation images found
     print("Creating realistic sample images...")
     _create_realistic_samples()
 
@@ -28,28 +24,24 @@ def _create_realistic_samples():
     """Create realistic damage segmentation samples"""
     fig, axes = plt.subplots(3, 4, figsize=(16, 12))
     
-    np.random.seed(42)  # For consistent results
+    np.random.seed(42)
     
     for i in range(3):
-        # Input Image
         img = np.random.rand(256, 256, 3) * 0.7 + 0.3
         axes[i, 0].imshow(img)
         axes[i, 0].set_title('Input Image', fontweight='bold', fontsize=10)
         axes[i, 0].axis('off')
         
-        # Ground Truth
         true_mask = _create_realistic_mask()
         axes[i, 1].imshow(true_mask, cmap='Set3', vmin=0, vmax=4)
         axes[i, 1].set_title('Ground Truth', fontweight='bold', color='green', fontsize=10)
         axes[i, 1].axis('off')
         
-        # Prediction
         pred_mask = _create_realistic_prediction(true_mask)
         axes[i, 2].imshow(pred_mask, cmap='Set3', vmin=0, vmax=4)
         axes[i, 2].set_title('Prediction', fontweight='bold', color='blue', fontsize=10)
         axes[i, 2].axis('off')
         
-        # Comparison
         comp = np.hstack([true_mask, pred_mask])
         axes[i, 3].imshow(comp, cmap='Set3', vmin=0, vmax=4)
         axes[i, 3].set_title('Comparison\n(Left: Truth, Right: Pred)', fontweight='bold', color='red', fontsize=10)
@@ -65,23 +57,16 @@ def _create_realistic_mask():
     """Create realistic damage mask with meaningful patterns"""
     mask = np.zeros((256, 256), dtype=np.uint8)
     
-    # Create different damage regions
-    # Region 1: no damage (class 0)
     mask[50:100, 50:150] = 0
     
-    # Region 2: minor damage (class 1)  
     mask[100:150, 30:100] = 1
     
-    # Region 3: major damage (class 2)
     mask[150:200, 80:180] = 2
     
-    # Region 4: destroyed (class 3)
     mask[50:120, 180:230] = 3
     
-    # Region 5: total destruction (class 4)
     mask[180:240, 20:80] = 4
     
-    # Add some noise
     noise = np.random.randint(0, 5, (256, 256))
     mask = np.where(np.random.rand(256, 256) > 0.9, noise, mask)
     
@@ -91,9 +76,8 @@ def _create_realistic_prediction(true_mask):
     """Create realistic prediction (similar to ground truth with errors)"""
     pred = true_mask.copy()
     
-    # Add realistic errors
     h, w = pred.shape
-    for _ in range(5):  # 5 error regions
+    for _ in range(5):
         i, j = np.random.randint(0, h-20), np.random.randint(0, w-20)
         pred[i:i+20, j:j+20] = np.random.randint(0, 5)
     
@@ -103,7 +87,6 @@ def create_training_curves():
     """Create training and validation curves"""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     
-    # Loss graph
     epochs = list(range(1, 51))
     train_loss = [1.4 * np.exp(-0.05 * i) + 0.7 for i in range(50)]
     val_loss = [1.3 * np.exp(-0.04 * i) + 0.75 for i in range(50)]
@@ -116,7 +99,6 @@ def create_training_curves():
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     
-    # IoU graph
     train_iou = [0.2 + 0.4 * (1 - np.exp(-0.1 * i)) for i in range(50)]
     val_iou = [0.15 + 0.3 * (1 - np.exp(-0.08 * i)) for i in range(50)]
 
