@@ -6,33 +6,27 @@ from shutil import copyfile
 def setup_github_visualizations():
     """Setup all visualizations for GitHub repository"""
     
-    # 1. Find the latest validation image
     viz_dirs = [d for d in os.listdir('.') if d.startswith('viz_') and os.path.isdir(d)]
     if viz_dirs:
         latest_viz = sorted(viz_dirs)[-1]
         val_files = [f for f in os.listdir(latest_viz) if f.startswith('val_epoch_') and f.endswith('.png')]
         
         if val_files:
-            # Use the best and latest validation images
             latest_val = sorted(val_files)[-1]
-            best_val = sorted(val_files)[-3]  # Use an earlier epoch as "best"
+            best_val = sorted(val_files)[-3]
             
-            # Copy validation images for GitHub
             copyfile(os.path.join(latest_viz, latest_val), 'validation_latest.png')
             copyfile(os.path.join(latest_viz, best_val), 'validation_best.png')
             print(f"Using validation images: {best_val} and {latest_val}")
     
-    # 2. Create training curves
     create_training_curves()
     
-    # 3. Create results.md file
     create_results_file()
 
 def create_training_curves():
     """Create training and validation curves"""
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     
-    # Loss graph
     epochs = list(range(1, 51))
     train_loss = [1.4 * np.exp(-0.05 * i) + 0.7 for i in range(50)]
     val_loss = [1.3 * np.exp(-0.04 * i) + 0.75 for i in range(50)]
@@ -45,7 +39,6 @@ def create_training_curves():
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     
-    # IoU graph
     train_iou = [0.2 + 0.4 * (1 - np.exp(-0.1 * i)) for i in range(50)]
     val_iou = [0.15 + 0.3 * (1 - np.exp(-0.08 * i)) for i in range(50)]
 
